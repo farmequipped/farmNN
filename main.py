@@ -9,10 +9,13 @@ from sklearn.preprocessing import StandardScaler
 import pandas as pd
 
 # Load your data
-data = pd.read_csv("environment_data.csv")
+data = pd.read_csv("data/farm_alert_multiclass_training_data.csv")
 
 # Features
-X = data[['temperature', 'co2', 'humidity', 'wind_speed']].values
+X = data.iloc[0]
+
+# Remove the first row from the data since it's now headers
+data = data[1:]
 
 # Target
 y = data['disaster_type'].astype('category').cat.codes.values  # Convert to integers
