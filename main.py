@@ -5,22 +5,33 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
 
 import pandas as pd
 
-# Load your data
-data = pd.read_csv("data/farm_alert_multiclass_training_data.csv")
+def f1_metric(y_true, y_pred):
+    y_pred = tf.round(y_pred)
+    tp = tf.reduce_sum(tf.cast(y_true * y_pred, tf.float32))
+    precision = tp / (tf.reduce_sum(y_pred) + 1e-8)
+    recall = tp / (tf.reduce_sum(y_true) + 1e-8)
+    return 2 * (precision * recall) / (precision + recall + 1e-8)
 
-# Features
-X = data.iloc[0]
+# Load CSV without headers
+data = pd.read_csv("data/farm_alert_multiclass_training_data.csv", header=None)
 
-# Remove the first row from the data since it's now headers
-data = data[1:]
+# Replace column names with the first row
+data.columns = data.iloc[0]
+
+# Remove the first row from data
+data = data[1:].reset_index(drop=True)
+
+# Features (all columns except target)
+X = data.drop(columns=['Disaster_Label']).astype(float)
 
 # Target
-y = data['disaster_type'].astype('category').cat.codes.values  # Convert to integers
+y = data['Disaster_Label'].astype('category').cat.codes.values
 
-# Convert to one-hot encoding for multiclass classification
+# Convert to one-hot encoding
 y = to_categorical(y)
 
 # Split dataset
@@ -41,7 +52,7 @@ model = Sequential([
 ])
 
 # Compile the model
-model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy',f1_metric])
 
 model.summary()
 
@@ -52,8 +63,8 @@ history = model.fit(
     validation_split=0.2
 )
 
-loss, accuracy = model.evaluate(X_test, y_test)
-print(f"Test Accuracy: {accuracy*100:.2f}%")
+# loss, accuracy = model.evaluate(X_test, y_test)
+# print(f"Test Accuracy: {accuracy*100:.2f}%")
 
 # predictions = model.predict(X_test)
 # predicted_classes = np.argmax(predictions, axis=1)
